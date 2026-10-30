@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.trae/
+.screenshots/
+coverage/
+e2e-report/
+test-results/
+*.local
+.DS_Store
