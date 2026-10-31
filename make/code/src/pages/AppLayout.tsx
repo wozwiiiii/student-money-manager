@@ -12,6 +12,7 @@ const { Sider, Header, Content } = Layout;
 
 const MENU_ITEMS = [
   { key: '/overview', icon: <WalletOutlined />, label: '资产总览' },
+  { key: '/accounts', icon: <WalletOutlined />, label: '账户管理' },
   { key: '/transactions', icon: <AccountBookOutlined />, label: '收支记录' },
   { key: '/budget', icon: <PieChartOutlined />, label: '预算' },
   { key: '/goals', icon: <FundOutlined />, label: '储蓄目标' },

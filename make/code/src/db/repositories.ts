@@ -32,9 +32,11 @@ function repo<T extends Entity>(table: () => { toArray(): Promise<T[]>; get(id: 
 
 export const accountsRepo = {
   ...repo<Account>(() => db.accounts),
-  async add(input: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>): Promise<Account> {
+  /** 全部使用中账户（不含已删除，02 §2.7） */
+  active: async (): Promise<Account[]> => (await db.accounts.toArray()).filter((a) => !a.deletedAt),
+  async add(input: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>): Promise<Account> {
     const now = new Date().toISOString();
-    const account: Account = { ...input, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
+    const account: Account = { ...input, id: crypto.randomUUID(), deletedAt: null, createdAt: now, updatedAt: now };
     await db.accounts.add(account);
     return account;
   },

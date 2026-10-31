@@ -15,6 +15,24 @@ export interface Account {
   /** 是否计入总资产，默认计入（01 §5.1） */
   includeInTotal: boolean;
   note?: string;
+  /** —— 定期与理财产品类专有（02 §2.6.2）—— */
+  /** 本金（分），必填 */
+  principalCents?: number;
+  /** 存入/购买日期 YYYY-MM-DD，必填，不晚于当天 */
+  purchaseDate?: string;
+  /** 期限（天）；预置选项集 [TBD]，自定义天数 */
+  termDays?: number;
+  /** 到期日 YYYY-MM-DD = 存入日期 + 期限，可手动修改，不早于存入日期 */
+  maturityDate?: string;
+  /** 展示收益率（%，如 3.5 表示 3.5%），用户抄录，仅作参考展示，本产品不内置该数值 */
+  displayRatePercent?: number | null;
+  /** 风险等级（01 §5.7 五级标签），选填，可"不确定" */
+  riskLevel?: RiskLevel | 'unknown' | null;
+  /** —— 基金持仓类专有（02 §2.6.3）—— */
+  /** 基金名称，选填 */
+  fundName?: string;
+  /** 软删除标记（02 §2.4.7：删除后收支记录仍需显示原账户名并附「已删除」标记） */
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,17 +41,22 @@ export interface Account {
 export interface SnapshotEntry {
   accountId: string;
   balanceCents: number;
+  /** 基金持仓方式 A 录入时保留份额与净值（02 §3.6） */
+  units?: number | null;
+  nav?: number | null;
 }
 
 /** 资产快照（01 §5.2）：某时刻各账户余额的时点记录 = 一个时间点 + 各账户余额 + 总资产 */
 export interface AssetSnapshot {
   id: string;
-  /** 快照时间（ISO 字符串） */
+  /** 快照时间（ISO 字符串），精确到分钟 */
   takenAt: string;
   entries: SnapshotEntry[];
-  /** 总资产 = 计入统计的账户余额之和（分） */
+  /** 总资产 = 计入统计的账户余额之和（分），保存时计算并固定（02 §3.6、§5.4.3） */
   totalCents: number;
   createdAt: string;
+  /** 最后编辑时间（02 §3.4.5 编辑留痕），未编辑过为 null */
+  updatedAt: string | null;
 }
 
 /** 收支方向（01 §5.3）：转账指账户之间的资金移动，不计入收支统计 */

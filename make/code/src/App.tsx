@@ -3,6 +3,7 @@ import zhCN from 'antd/locale/zh_CN';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from '@/pages/AppLayout';
 import OverviewPage from '@/pages/OverviewPage';
+import AccountsPage from '@/pages/AccountsPage';
 import TransactionsPage from '@/pages/TransactionsPage';
 import BudgetPage from '@/pages/BudgetPage';
 import GoalsPage from '@/pages/GoalsPage';
@@ -25,6 +26,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/overview" replace />} />
           <Route path="/overview" element={<OverviewPage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/budget" element={<BudgetPage />} />
           <Route path="/goals" element={<GoalsPage />} />
