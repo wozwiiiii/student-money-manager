@@ -11,6 +11,9 @@ interface BudgetsState {
   load: () => Promise<void>;
   saveBudget: (budget: Omit<Budget, 'id' | 'updatedAt'> & { id?: string }) => Promise<void>;
   addCustomCycle: (input: Omit<CustomCycle, 'id' | 'createdAt' | 'ended'>) => Promise<void>;
+  updateCustomCycle: (id: string, patch: Partial<Omit<CustomCycle, 'id' | 'createdAt'>>) => Promise<void>;
+  /** 删除周期及其预算设置，不改动任何收支记录（03 §4.2 规则 6） */
+  removeCustomCycle: (id: string) => Promise<void>;
   endCustomCycle: (id: string) => Promise<void>;
 }
 
@@ -29,6 +32,19 @@ export const useBudgetsStore = create<BudgetsState>((set, get) => ({
   },
   addCustomCycle: async (input) => {
     await customCyclesRepo.save({ ...input, id: newId(), ended: false, createdAt: nowIso() });
+    await get().load();
+  },
+  updateCustomCycle: async (id, patch) => {
+    const existing = await customCyclesRepo.get(id);
+    if (!existing) return;
+    await customCyclesRepo.save({ ...existing, ...patch });
+    await get().load();
+  },
+  removeCustomCycle: async (id) => {
+    await customCyclesRepo.remove(id);
+    // 该周期上的预算设置一并删除（03 §4.2 规则 6）
+    const linked = (await budgetsRepo.all()).filter((b) => b.cycleType === 'custom' && b.cycleKey === id);
+    for (const b of linked) await budgetsRepo.remove(b.id);
     await get().load();
   },
   endCustomCycle: async (id) => {

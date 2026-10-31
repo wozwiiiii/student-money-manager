@@ -200,6 +200,11 @@ export interface AppSettings {
   backupReminderEnabled: boolean;
   /** 备份提醒周期（天），默认 30（08 §3.3 [Assumption, TBD]） */
   backupReminderDays: number;
+  /**
+   * 顶部预警提示的当日关闭状态（03 §5.6）：key 为预警对象 key，value 为「关闭日期|当时的梯度」。
+   * 当天内不再展示；梯度升级视为新提示、重新展示。
+   */
+  dismissedWarnings?: Record<string, string>;
 }
 
 /** 应用状态记录（08 §2.2 S9）：告知与声明的确认状态、备份时间 */
