@@ -8,7 +8,11 @@ export function nowIso(): string {
   return new Date().toISOString();
 }
 
-/** 今天日期，YYYY-MM-DD */
+/** 今天日期，YYYY-MM-DD（用户本地日历日期；不能用 toISOString，那是 UTC 日期） */
 export function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  const date = new Date();
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }

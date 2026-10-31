@@ -102,6 +102,22 @@ export async function exportBackup(): Promise<BackupFile> {
   };
 }
 
+/** 备份文件必须包含的数据表（08 §2.2 清单 S1～S9 全量） */
+const BACKUP_DATA_KEYS = [
+  'accounts',
+  'snapshots',
+  'transactions',
+  'categories',
+  'mappingRules',
+  'budgets',
+  'customCycles',
+  'goals',
+  'goalEntries',
+  'riskProfile',
+  'settings',
+  'appMeta',
+] as const;
+
 /** 识别备份文件：非本应用导出或结构不符时返回错误文案（08 §3.2 步骤 1） */
 export function validateBackupFile(raw: unknown): { ok: true; file: BackupFile } | { ok: false; error: string } {
   if (typeof raw !== 'object' || raw === null) {
@@ -109,6 +125,11 @@ export function validateBackupFile(raw: unknown): { ok: true; file: BackupFile }
   }
   const file = raw as Partial<BackupFile>;
   if (file.app !== BACKUP_APP_ID || typeof file.schemaVersion !== 'number' || typeof file.data !== 'object' || file.data === null) {
+    return { ok: false, error: '这不是本应用导出的备份文件，无法导入' };
+  }
+  // 结构校验：S1～S9 每张表都必须是数组，缺表/类型不符按"结构不符"拒绝
+  const data = file.data as Record<string, unknown>;
+  if (!BACKUP_DATA_KEYS.every((key) => Array.isArray(data[key]))) {
     return { ok: false, error: '这不是本应用导出的备份文件，无法导入' };
   }
   if (file.schemaVersion > BACKUP_SCHEMA_VERSION) {

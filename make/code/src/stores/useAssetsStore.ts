@@ -63,6 +63,12 @@ export const useAssetsStore = create<AssetsState>((set, get) => ({
     const included = new Set(accounts.filter((a) => a.includeInTotal).map((a) => a.id));
     const totalCents = computeSnapshotTotalCents(input.entries, included);
 
+    // 同一分钟只允许一条快照（02 §3.4.3）：新增与编辑一并约束，编辑排除自身
+    const conflict = snapshots.find(
+      (s) => s.id !== editId && sameMinuteKey(s.takenAt) === sameMinuteKey(input.takenAt),
+    );
+    if (conflict) throw new Error('该时间已有快照，请调整时间或编辑原快照');
+
     if (editId) {
       const existing = await snapshotsRepo.get(editId);
       if (!existing) return;
@@ -74,9 +80,6 @@ export const useAssetsStore = create<AssetsState>((set, get) => ({
         updatedAt: nowIso(),
       });
     } else {
-      // 同一分钟只允许一条快照（02 §3.4.3）
-      const conflict = snapshots.find((s) => sameMinuteKey(s.takenAt) === sameMinuteKey(input.takenAt));
-      if (conflict) throw new Error('该时间已有快照，请调整时间或编辑原快照');
       const now = nowIso();
       await snapshotsRepo.save({
         id: newId(),

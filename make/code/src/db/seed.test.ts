@@ -61,12 +61,12 @@ describe('initDatabase（默认数据种子）', () => {
 
   it('幂等：重复初始化不产生重复数据', async () => {
     await initDatabase();
-    const before = await categoriesRepo.all();
+    const categoriesBefore = await categoriesRepo.all();
+    const rulesBefore = await mappingRulesRepo.all();
     await initDatabase();
-    const after = await categoriesRepo.all();
-    expect(after.length).toBe(before.length);
-    expect((await mappingRulesRepo.all()).length).toBe(
-      (await mappingRulesRepo.all()).length,
-    );
+    const categoriesAfter = await categoriesRepo.all();
+    const rulesAfter = await mappingRulesRepo.all();
+    expect(categoriesAfter.length).toBe(categoriesBefore.length);
+    expect(rulesAfter.length).toBe(rulesBefore.length);
   });
 });

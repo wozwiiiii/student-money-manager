@@ -100,6 +100,31 @@ describe('备份导出与导入恢复（08 §3.1/3.2）', () => {
     const result = validateBackupFile({ ...backup, schemaVersion: 999 });
     expect(result.ok).toBe(false);
   });
+
+  it('拒绝 data 结构不符（缺全部数组）的文件，返回错误而非抛异常（08 §3.2 步骤 1）', async () => {
+    const { tx } = await seedSampleData();
+    const result = await importBackup({
+      app: 'campus-finance-keeper',
+      schemaVersion: 1,
+      data: {},
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('这不是本应用导出的备份文件，无法导入');
+    }
+    // 本地数据不受影响
+    const txs = await transactionsRepo.all();
+    expect(txs.map((t) => t.id)).toContain(tx.id);
+  });
+
+  it('拒绝 data 数组不完整的文件（如缺 transactions）', async () => {
+    await seedSampleData();
+    const backup = await exportBackup();
+    const broken = JSON.parse(JSON.stringify(backup)) as Record<string, unknown>;
+    (broken.data as Record<string, unknown>).transactions = undefined;
+    const result = await importBackup(broken);
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe('清空全部数据（08 §2.5）', () => {
