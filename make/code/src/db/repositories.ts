@@ -105,6 +105,7 @@ export const settingsRepo = {
       gradedReminderEnabled: true,
       backupReminderEnabled: true,
       backupReminderDays: 30,
+      bannerReappearRule: 'B',
     },
   save: (value: AppSettings): Promise<string> => db.settings.put(value),
 };

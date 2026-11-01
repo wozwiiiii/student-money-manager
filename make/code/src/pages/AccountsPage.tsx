@@ -15,7 +15,7 @@ import type { Account, AssetSnapshot, AssetType } from '@/lib/types';
  * 删除规则（02 §2.4.7）：无数据一次确认；有快照或关联收支记录需勾选了解影响。
  */
 export default function AccountsPage() {
-  const { accounts, snapshots, latestEntryOf, removeAccount } = useAssetsStore();
+  const { accounts, snapshots, latestEntryOf, removeAccount, moveAccount, resetAccountOrder } = useAssetsStore();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);
   const [createType, setCreateType] = useState<AssetType>('cash');
@@ -89,9 +89,12 @@ export default function AccountsPage() {
     <Card
       title="账户管理"
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate('cash')}>
-          添加账户
-        </Button>
+        <Space>
+          <Button onClick={() => void resetAccountOrder()}>恢复默认顺序</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate('cash')}>
+            添加账户
+          </Button>
+        </Space>
       }
     >
       {accounts.length === 0 ? (
@@ -132,6 +135,8 @@ export default function AccountsPage() {
                           <Space>
                             <a onClick={() => setDetail(account)}>详情</a>
                             <a onClick={() => openEdit(account)}>编辑</a>
+                            <a onClick={() => void moveAccount(account.id, 'up')}>上移</a>
+                            <a onClick={() => void moveAccount(account.id, 'down')}>下移</a>
                             <a style={{ color: '#ff4d4f' }} onClick={() => handleDelete(account)}>
                               删除
                             </a>

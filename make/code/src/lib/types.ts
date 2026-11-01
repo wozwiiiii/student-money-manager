@@ -33,6 +33,8 @@ export interface Account {
   fundName?: string;
   /** 软删除标记（02 §2.4.7：删除后收支记录仍需显示原账户名并附「已删除」标记） */
   deletedAt: string | null;
+  /** 显示顺序（05 §4.3：默认按创建先后，用户可调整，仅影响展示顺序） */
+  sortOrder?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -97,6 +99,8 @@ export interface Category {
   level: 1 | 2;
   /** 是否内置（内置清单见 03 §3.1/3.2） */
   builtin: boolean;
+  /** 内置分类的默认名称（05 §7.3 恢复默认名称用），自定义分类为 undefined */
+  defaultName?: string;
   disabled: boolean;
   sortOrder: number;
 }
@@ -160,6 +164,12 @@ export interface SavingsGoal {
    * [TBD] 关联取值方案未定（01 §5.6），当前仅存关联账户列表，取值仍以存入/取出记录为准。
    */
   linkedAccountIds: string[];
+  /** 备注，≤ 200 字（04 §2.3 [Assumption, TBD]） */
+  note?: string;
+  /** 达成日期 YYYY-MM-DD（触发达成的存入记录日期，04 §2.5），未达成为 null */
+  achievedAt?: string | null;
+  /** 放弃日期 YYYY-MM-DD（04 §2.5），未放弃为 null */
+  abandonedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -187,6 +197,8 @@ export interface RiskProfile {
   totalScore: number | null;
   riskLevel: RiskLevel | null;
   manuallyAdjusted: boolean;
+  /** 最近一次手动调整时间（04 §3.5）；重测提交后随手动调整标记一并清除 */
+  manuallyAdjustedAt?: string | null;
 }
 
 /** 用户偏好设置（08 §2.2 S8）。默认值见 src/lib/defaults.ts。 */
@@ -201,11 +213,19 @@ export interface AppSettings {
   /** 备份提醒周期（天），默认 30（08 §3.3 [Assumption, TBD]） */
   backupReminderDays: number;
   /**
-   * 顶部预警提示的当日关闭状态（03 §5.6）：key 为预警对象 key，value 为「关闭日期|当时的梯度」。
-   * 当天内不再展示；梯度升级视为新提示、重新展示。
+   * 顶部预警提示的关闭状态（03 §5.6）：key 为预警对象 key，
+   * value 为「关闭日期|当时的梯度|当时所处周期 key」。重现行为由 bannerReappearRule 决定（05 §5.1）。
    */
   dismissedWarnings?: Record<string, string>;
+  /**
+   * 提示条关闭后的重现规则（05 §5.1 [Assumption, TBD]）：
+   * A = 本周期内梯度升级时重现；B = 次日重新评估（默认，与 03 §5.6 一致）；C = 本周期内不再重现。
+   */
+  bannerReappearRule: BannerReappearRule;
 }
+
+/** 提示条关闭后的重现规则选项（05 §5.1） */
+export type BannerReappearRule = 'A' | 'B' | 'C';
 
 /** 应用状态记录（08 §2.2 S9）：告知与声明的确认状态、备份时间 */
 export interface AppMeta {

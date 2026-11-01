@@ -35,10 +35,13 @@ import {
   currentMonthKey,
   customCycleBounds,
   cycleStatus,
+  dismissRecord,
+  isWarningDismissed,
   monthBounds,
   periodStats,
   recordsInPeriod,
   type PeriodBounds,
+  type WarningItem,
 } from '@/lib/stats';
 import { formatYuan } from '@/lib/money';
 import { today } from '@/lib/ids';
@@ -125,12 +128,24 @@ export default function TransactionsPage() {
     ? buildWarnings(periodLabel, budget?.totalBudgetCents ? totalView : null, categoryViews)
     : [];
 
-  // 当日已关闭的提示不再展示；梯度升级视为新提示（03 §5.6）
+  // 提示条关闭后的重现规则（05 §5.1 A/B/C）：默认 B 当日关闭、次日重新评估、梯度升级重现（03 §5.6）
+  const dismissCycleKey = customCycle ? customCycle.id : monthKey;
   const dismissed = settings?.dismissedWarnings ?? {};
-  const visibleWarnings = warnings.filter((w) => dismissed[w.key] !== `${today()}|${w.level}`);
+  const visibleWarnings = warnings.filter(
+    (w) =>
+      !isWarningDismissed(
+        dismissed[w.key],
+        settings?.bannerReappearRule ?? 'B',
+        w.level,
+        today(),
+        dismissCycleKey,
+      ),
+  );
 
-  const dismissWarning = (key: string, level: string) => {
-    void saveSettings({ dismissedWarnings: { ...dismissed, [key]: `${today()}|${level}` } });
+  const dismissWarning = (key: string, level: WarningItem['level']) => {
+    void saveSettings({
+      dismissedWarnings: { ...dismissed, [key]: dismissRecord(today(), level, dismissCycleKey) },
+    });
   };
 
   const slices = useMemo(

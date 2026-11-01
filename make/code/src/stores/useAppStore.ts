@@ -54,9 +54,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ appMeta: next });
   },
   saveRiskProfile: async (patch) => {
+    // 首次测评时记录尚不存在，允许创建（04 §3.5）
     const current = await riskProfileRepo.get();
-    if (!current) return;
-    const next = { ...current, ...patch };
+    const next: RiskProfile = {
+      id: 'current',
+      assessedAt: null,
+      totalScore: null,
+      riskLevel: null,
+      manuallyAdjusted: false,
+      manuallyAdjustedAt: null,
+      ...current,
+      ...patch,
+    };
     await riskProfileRepo.save(next);
     set({ riskProfile: next });
   },

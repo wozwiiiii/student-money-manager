@@ -1,6 +1,7 @@
 import { Layout, Menu, Typography } from 'antd';
 import {
   AccountBookOutlined,
+  BookOutlined,
   FundOutlined,
   PieChartOutlined,
   SettingOutlined,
@@ -16,6 +17,7 @@ const MENU_ITEMS = [
   { key: '/transactions', icon: <AccountBookOutlined />, label: '收支记录' },
   { key: '/budget', icon: <PieChartOutlined />, label: '预算' },
   { key: '/goals', icon: <FundOutlined />, label: '储蓄目标' },
+  { key: '/education', icon: <BookOutlined />, label: '配置教育' },
   { key: '/settings', icon: <SettingOutlined />, label: '设置' },
 ];
 

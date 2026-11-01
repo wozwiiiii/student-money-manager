@@ -153,3 +153,35 @@ describe('当前余额取值（01 §5.1：取自最近一次资产快照）', ()
     expect(useAssetsStore.getState().latestEntryOf(a.id)?.entry.balanceCents).toBe(100);
   });
 });
+
+describe('账户排序（05 §4.3）', () => {
+  it('默认按创建先后展示，组内上移 / 下移仅影响展示顺序', async () => {
+    const { addAccount: add, moveAccount } = useAssetsStore.getState();
+    await add({ name: '现金', assetType: 'cash', includeInTotal: true });
+    const b = await add({ name: '余额宝', assetType: 'cash', includeInTotal: true });
+    const fund = await add({ name: '基金', assetType: 'fund', includeInTotal: true });
+    const names = () => useAssetsStore.getState().accounts.map((x) => x.name);
+    expect(names()).toEqual(['现金', '余额宝', '基金']);
+
+    await moveAccount(b.id, 'up');
+    expect(names()).toEqual(['余额宝', '现金', '基金']);
+
+    // 组内首位不可再上移；组间不跨越（cash 与 fund 不互换）
+    await moveAccount(b.id, 'up');
+    expect(names()).toEqual(['余额宝', '现金', '基金']);
+    await moveAccount(fund.id, 'up');
+    expect(names()).toEqual(['余额宝', '现金', '基金']);
+  });
+
+  it('恢复默认顺序回到创建先后（05 §7.3）', async () => {
+    const { moveAccount, resetAccountOrder, load } = useAssetsStore.getState();
+    const base = { assetType: 'cash' as const, includeInTotal: true, deletedAt: null, updatedAt: '2026-01-01T00:00:00.000Z' };
+    await accountsRepo.save({ ...base, id: 'x', name: 'a', sortOrder: 0, createdAt: '2026-01-01T00:00:00.000Z' });
+    await accountsRepo.save({ ...base, id: 'y', name: 'b', sortOrder: 1, createdAt: '2026-01-02T00:00:00.000Z' });
+    await load();
+    await moveAccount('x', 'down');
+    expect(useAssetsStore.getState().accounts.map((x) => x.name)).toEqual(['b', 'a']);
+    await resetAccountOrder();
+    expect(useAssetsStore.getState().accounts.map((x) => x.name)).toEqual(['a', 'b']);
+  });
+});

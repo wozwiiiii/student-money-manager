@@ -21,6 +21,13 @@ interface AssetsState {
   updateAccount: (id: string, patch: Partial<Omit<Account, 'id' | 'createdAt' | 'deletedAt'>>) => Promise<void>;
   /** 软删除（02 §2.4.7）：历史快照不变；关联收支记录保留原账户名并标「已删除」 */
   removeAccount: (id: string) => Promise<void>;
+  /**
+   * 调整账户显示顺序（05 §4.3）：在同资产类型分组内上移 / 下移，
+   * 仅影响展示顺序，不影响任何统计。默认按创建先后排列。
+   */
+  moveAccount: (id: string, dir: 'up' | 'down') => Promise<void>;
+  /** 恢复默认顺序（05 §7.3）：回到创建先后，仅恢复显示顺序 */
+  resetAccountOrder: () => Promise<void>;
   /** 保存快照（新增或编辑；编辑时 updatedAt 留痕，02 §3.4.5） */
   saveSnapshot: (input: SnapshotInput, editId?: string) => Promise<void>;
   removeSnapshot: (id: string) => Promise<void>;
@@ -32,16 +39,28 @@ function sortAsc(snapshots: AssetSnapshot[]): AssetSnapshot[] {
   return [...snapshots].sort((a, b) => a.takenAt.localeCompare(b.takenAt));
 }
 
+/** 展示顺序（05 §4.3）：sortOrder 优先，未设置过顺序的按创建先后 */
+function displayOrder(accounts: Account[]): Account[] {
+  return [...accounts].sort((a, b) => {
+    const sa = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    const sb = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    if (sa !== sb) return sa - sb;
+    return a.createdAt.localeCompare(b.createdAt);
+  });
+}
+
 export const useAssetsStore = create<AssetsState>((set, get) => ({
   accounts: [],
   snapshots: [],
   loaded: false,
   load: async () => {
     const [accounts, snapshots] = await Promise.all([accountsRepo.all(), snapshotsRepo.allOrdered()]);
-    set({ accounts: accounts.filter((a) => !a.deletedAt), snapshots, loaded: true });
+    set({ accounts: displayOrder(accounts.filter((a) => !a.deletedAt)), snapshots, loaded: true });
   },
   addAccount: async (input) => {
-    const account = await accountsRepo.add(input);
+    // 创建时分配 sortOrder：保证"默认按创建先后排列"（05 §4.3）不依赖毫秒级 createdAt
+    const maxSort = get().accounts.reduce((m, a) => Math.max(m, a.sortOrder ?? -1), -1);
+    const account = await accountsRepo.add({ ...input, sortOrder: input.sortOrder ?? maxSort + 1 });
     await get().load();
     return account;
   },
@@ -56,6 +75,33 @@ export const useAssetsStore = create<AssetsState>((set, get) => ({
     const existing = await accountsRepo.get(id);
     if (!existing) return;
     await accountsRepo.save({ ...existing, deletedAt: nowIso(), updatedAt: nowIso() });
+    await get().load();
+  },
+  moveAccount: async (id, dir) => {
+    const ordered = displayOrder(get().accounts);
+    const from = ordered.findIndex((a) => a.id === id);
+    if (from < 0) return;
+    // 仅在同资产类型分组内移动（账户管理页按三类分组展示）
+    let to = dir === 'up' ? from - 1 : from + 1;
+    while (to >= 0 && to < ordered.length && ordered[to].assetType !== ordered[from].assetType) {
+      to += dir === 'up' ? -1 : 1;
+    }
+    if (to < 0 || to >= ordered.length || ordered[to].assetType !== ordered[from].assetType) return;
+    const next = [...ordered];
+    [next[from], next[to]] = [next[to], next[from]];
+    for (let i = 0; i < next.length; i++) {
+      if (next[i].sortOrder !== i) await accountsRepo.save({ ...next[i], sortOrder: i, updatedAt: nowIso() });
+    }
+    await get().load();
+  },
+  resetAccountOrder: async () => {
+    // 恢复创建先后：按 createdAt 排序后重写 sortOrder（05 §7.3：仅恢复显示顺序）
+    const ordered = [...get().accounts].sort(
+      (a, b) => a.createdAt.localeCompare(b.createdAt) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+    );
+    for (let i = 0; i < ordered.length; i++) {
+      if (ordered[i].sortOrder !== i) await accountsRepo.save({ ...ordered[i], sortOrder: i, updatedAt: nowIso() });
+    }
     await get().load();
   },
   saveSnapshot: async (input, editId) => {

@@ -1,4 +1,4 @@
-import type { Budget, Category, CustomCycle, Transaction } from './types';
+import type { BannerReappearRule, Budget, Category, CustomCycle, Transaction } from './types';
 import { progressPercent, sumCents } from './money';
 
 /**
@@ -187,4 +187,45 @@ export function categoryBudgetMap(budget: Budget | undefined): Map<string, numbe
 /** 当前自然月 key（YYYY-MM） */
 export function currentMonthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// —— 提示条关闭后的重现规则（05 §5.1）——
+
+/** 梯度排序：接近超支 < 已超支（03 §5.3） */
+function levelRank(level: BudgetLevel): number {
+  return level === 'overspend' ? 2 : level === 'warning' ? 1 : 0;
+}
+
+/** 生成提示条关闭记录：「关闭日期|当时的梯度|当时所处周期 key」 */
+export function dismissRecord(date: string, level: BudgetLevel, cycleKey: string): string {
+  return `${date}|${level}|${cycleKey}`;
+}
+
+/**
+ * 提示条关闭后是否仍隐藏（05 §5.1）：
+ * - A：本周期内已关闭的同级或更高梯度提示保持隐藏，梯度升级时重现；
+ * - B（默认，与 03 §5.6 一致）：当日关闭、次日重新评估；梯度升级视为新提示立即重现；
+ * - C：本周期内不再重现（[对齐 TBD]：含梯度升级例外，与 03 §5.6 的对齐待评审）。
+ * 旧格式「日期|梯度」（无周期 key）按 B 的规则处理。
+ */
+export function isWarningDismissed(
+  record: string | undefined,
+  rule: BannerReappearRule,
+  level: BudgetLevel,
+  todayDate: string,
+  cycleKey: string,
+): boolean {
+  if (!record) return false;
+  const [date, levelAtDismiss, recordCycle] = record.split('|');
+  const dismissedRank = levelRank((levelAtDismiss as BudgetLevel) ?? 'warning');
+  const upgraded = dismissedRank < levelRank(level);
+  switch (rule) {
+    case 'A':
+      return recordCycle === cycleKey && !upgraded;
+    case 'C':
+      return recordCycle === cycleKey;
+    case 'B':
+    default:
+      return date === todayDate && !upgraded;
+  }
 }

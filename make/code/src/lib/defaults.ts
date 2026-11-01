@@ -54,6 +54,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   gradedReminderEnabled: true,
   backupReminderEnabled: true,
   backupReminderDays: 30,
+  bannerReappearRule: 'B',
 };
 
 export const DEFAULT_APP_META: AppMeta = {
@@ -83,6 +84,7 @@ export function buildBuiltinCategories(
         parentId: null,
         level: 1,
         builtin: true,
+        defaultName: seed.name,
         disabled: false,
         sortOrder: sortOrder++,
       });
@@ -94,6 +96,7 @@ export function buildBuiltinCategories(
           parentId,
           level: 2,
           builtin: true,
+          defaultName: childName,
           disabled: false,
           sortOrder: sortOrder++,
         });

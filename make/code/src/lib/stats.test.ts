@@ -4,7 +4,9 @@ import {
   buildWarnings,
   categorySlices,
   cycleStatus,
+  dismissRecord,
   inPeriod,
+  isWarningDismissed,
   monthBounds,
   periodStats,
   recordsInPeriod,
@@ -130,5 +132,39 @@ describe('buildWarnings（03 §5.4 文案模板）', () => {
 
   it('正常项不出现在提示中', () => {
     expect(buildWarnings('本月', budgetProgress(100, 10000, 80), [])).toHaveLength(0);
+  });
+});
+
+describe('提示条关闭后的重现规则（05 §5.1）', () => {
+  const today = '2026-11-01';
+  const cycle = '2026-11';
+
+  it('B（默认）：当日关闭不重现，次日重新评估；梯度升级立即重现（03 §5.6）', () => {
+    const record = dismissRecord('2026-11-01', 'warning', cycle);
+    expect(isWarningDismissed(record, 'B', 'warning', today, cycle)).toBe(true);
+    expect(isWarningDismissed(record, 'B', 'warning', '2026-11-02', cycle)).toBe(false);
+    expect(isWarningDismissed(record, 'B', 'overspend', today, cycle)).toBe(false);
+  });
+
+  it('A：本周期内保持隐藏，梯度升级时重现，跨周期重现', () => {
+    const record = dismissRecord('2026-11-01', 'warning', cycle);
+    expect(isWarningDismissed(record, 'A', 'warning', '2026-11-20', cycle)).toBe(true);
+    expect(isWarningDismissed(record, 'A', 'overspend', '2026-11-20', cycle)).toBe(false);
+    expect(isWarningDismissed(record, 'A', 'warning', '2026-12-05', '2026-12')).toBe(false);
+  });
+
+  it('C：本周期内不再重现（含梯度升级，[对齐 TBD]）', () => {
+    const record = dismissRecord('2026-11-01', 'warning', cycle);
+    expect(isWarningDismissed(record, 'C', 'warning', '2026-11-20', cycle)).toBe(true);
+    expect(isWarningDismissed(record, 'C', 'overspend', '2026-11-20', cycle)).toBe(true);
+    expect(isWarningDismissed(record, 'C', 'overspend', '2026-12-05', '2026-12')).toBe(false);
+  });
+
+  it('无关闭记录、旧格式记录的处理', () => {
+    expect(isWarningDismissed(undefined, 'B', 'warning', today, cycle)).toBe(false);
+    // 旧格式「日期|梯度」：按 B 规则处理
+    const legacy = '2026-11-01|warning';
+    expect(isWarningDismissed(legacy, 'B', 'warning', today, cycle)).toBe(true);
+    expect(isWarningDismissed(legacy, 'B', 'warning', '2026-11-02', cycle)).toBe(false);
   });
 });
