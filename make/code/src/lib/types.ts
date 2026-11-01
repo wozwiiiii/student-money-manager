@@ -240,4 +240,6 @@ export interface AppMeta {
   bankDisclaimerAckAt: string | null;
   /** 最近一次备份导出时间（08 §3.3） */
   lastBackupExportAt: string | null;
+  /** 最近一次点击"关闭本次提醒"的时间（08 §3.3）：下个提醒周期到达后再次提醒 */
+  backupReminderDismissedAt?: string | null;
 }

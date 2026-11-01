@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Card, InputNumber, Radio, Segmented, Space, Switch, Tag, Typography, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import CategoryAdminPanel from '@/components/CategoryAdminPanel';
+import DataManagementPanel from '@/components/DataManagementPanel';
 import { useAppStore } from '@/stores/useAppStore';
 import { DEFAULT_SETTINGS } from '@/lib/defaults';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER } from '@/lib/riskQuiz';
@@ -207,11 +208,18 @@ export default function SettingsPage() {
         </Space>
       </Card>
 
+      <Card
+        title="数据管理"
+        extra={<Typography.Text type="secondary">08 §3：备份导出 / 导入恢复 / 清空 / 备份提醒</Typography.Text>}
+      >
+        <DataManagementPanel />
+      </Card>
+
       <Card title="关于恢复默认">
         <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
           恢复默认只还原设置项（预警阈值、分级提醒、重现规则、账户排序、内置分类名称），不影响自定义分类、账户、记录与储蓄目标（05 §7.3）。
           自定义分类与账户没有出厂默认，只能手动删除或停用；风险偏好与储蓄目标参数不可恢复默认，只能重新测评或再次编辑。
-          数据清空与备份导出属于数据存储与合规模块，不在本页范围。
+          清空全部数据与备份导出见上方「数据管理」区（08 §2.5、§3）。
         </Typography.Paragraph>
       </Card>
     </Space>

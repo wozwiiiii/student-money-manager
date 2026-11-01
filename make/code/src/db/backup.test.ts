@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './database';
 import { initDatabase } from './seed';
-import { clearAllData, exportBackup, importBackup, validateBackupFile } from './backup';
+import { clearAllData, computeLastWriteAt, exportBackup, hasLocalUserData, importBackup, validateBackupFile } from './backup';
 import { accountsRepo, appMetaRepo, categoriesRepo, transactionsRepo } from './repositories';
 import type { Transaction } from '@/lib/types';
 
@@ -147,5 +147,32 @@ describe('清空全部数据（08 §2.5）', () => {
     expect((await categoriesRepo.all()).length).toBeGreaterThan(0);
     // 首次使用告知确认状态清除，告知层将重现（08 §7）
     expect((await appMetaRepo.get()).firstUseNoticeAckAt).toBeNull();
+  });
+});
+
+describe('导入冲突判定与数据写入时间（08 §3.2/§3.3）', () => {
+  beforeEach(async () => {
+    await db.delete();
+    await db.open();
+    await initDatabase();
+  });
+
+  it('仅种子默认数据时视为本地为空、无数据写入', async () => {
+    expect(await hasLocalUserData()).toBe(false);
+    expect(await computeLastWriteAt()).toBeNull();
+  });
+
+  it('有用户数据后判定为已有数据，写入时间为最近时间戳', async () => {
+    const { tx } = await seedSampleData();
+    expect(await hasLocalUserData()).toBe(true);
+    const writeAt = await computeLastWriteAt();
+    expect(writeAt).not.toBeNull();
+    expect(writeAt! >= tx.createdAt).toBe(true);
+  });
+
+  it('修改内置分类（重命名）也计入用户数据', async () => {
+    const first = (await categoriesRepo.all())[0];
+    await categoriesRepo.save({ ...first, name: '吃饭' });
+    expect(await hasLocalUserData()).toBe(true);
   });
 });

@@ -9,6 +9,7 @@ import BudgetPage from '@/pages/BudgetPage';
 import GoalsPage from '@/pages/GoalsPage';
 import EducationPage from '@/pages/EducationPage';
 import SettingsPage from '@/pages/SettingsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/education" element={<EducationPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Route>
       </Routes>
     </ConfigProvider>

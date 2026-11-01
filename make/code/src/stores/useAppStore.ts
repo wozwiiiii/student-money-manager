@@ -13,6 +13,8 @@ interface AppState {
   ackFirstUseNotice: () => Promise<void>;
   ackEducationDisclaimer: () => Promise<void>;
   markBackupExported: () => Promise<void>;
+  /** 点击"关闭本次提醒"（08 §3.3）：仅消除当次提示条，不改变开关状态，下个提醒周期到达后再次提醒 */
+  dismissBackupReminder: () => Promise<void>;
   saveRiskProfile: (patch: Partial<Omit<RiskProfile, 'id'>>) => Promise<void>;
 }
 
@@ -50,6 +52,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   markBackupExported: async () => {
     const current = await appMetaRepo.get();
     const next: AppMeta = { ...current, lastBackupExportAt: nowIso() };
+    await appMetaRepo.save(next);
+    set({ appMeta: next });
+  },
+  dismissBackupReminder: async () => {
+    const current = await appMetaRepo.get();
+    const next: AppMeta = { ...current, backupReminderDismissedAt: nowIso() };
     await appMetaRepo.save(next);
     set({ appMeta: next });
   },
