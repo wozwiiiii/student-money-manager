@@ -99,6 +99,11 @@ export interface Category {
   level: 1 | 2;
   /** 是否内置（内置清单见 03 §3.1/3.2） */
   builtin: boolean;
+  /**
+   * 核心内置标记，固化于种子创建时（05 §3.2"分类身份不变"、§3.4 核心内置不可停用）。
+   * 可选以兼容旧数据（旧数据缺省时按名称兜底判定，见 categoryAdmin.isCoreBuiltin）。
+   */
+  core?: boolean;
   /** 内置分类的默认名称（05 §7.3 恢复默认名称用），自定义分类为 undefined */
   defaultName?: string;
   disabled: boolean;

@@ -33,6 +33,9 @@ describe('initDatabase（默认数据种子）', () => {
     // 兜底分类无二级
     const other = expenseL1.find((c) => c.name === '其他支出')!;
     expect(expense.some((c) => c.parentId === other.id)).toBe(false);
+    // 核心内置标记固化于创建时（05 §3.2 身份不变）：餐饮为核心、医疗非核心
+    expect(expenseL1.find((c) => c.name === '餐饮')?.core).toBe(true);
+    expect(expenseL1.find((c) => c.name === '医疗')?.core).toBe(false);
   });
 
   it('写入内置映射规则并指向分类（02 §4.4.5 示例表）', async () => {

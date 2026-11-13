@@ -174,7 +174,8 @@ export function buildWarnings(
     });
   }
   return items.sort((a, b) => {
-    const weight = (w: WarningItem) => (w.level === 'overspend' ? 0 : 1) + (w.key === 'total' ? 0 : 2);
+    // 排序键按 spec 顺序：先梯度（已超支优先于接近超支），再范围（总预算优先于分类预算）
+    const weight = (w: WarningItem) => (w.level === 'overspend' ? 0 : 2) + (w.key === 'total' ? 0 : 1);
     return weight(a) - weight(b);
   });
 }

@@ -3,6 +3,7 @@ import {
   canDeleteCategory,
   canDeleteDirectly,
   canDisableCategory,
+  isCoreBuiltin,
   migrationCandidates,
   validateCategoryName,
 } from './categoryAdmin';
@@ -41,6 +42,20 @@ describe('内置分类保护（05 §3.4）', () => {
     // 核心范围按名称判定，重命名后的内置分类仍按内置保护（不可删除）
     expect(canDeleteCategory(cat({ name: '吃饭' }))).toBe(false);
     expect(canDisableCategory(cat({ name: '吃饭' }))).toBe(true);
+  });
+
+  it('核心内置分类重命名后身份不变，仍不可停用（05 §3.2/§3.4）', () => {
+    // 「餐饮」重命名为「吃饭」：身份仍为核心内置 → 不可停用
+    const renamedCore = cat({ name: '吃饭', core: true });
+    expect(isCoreBuiltin(renamedCore)).toBe(true);
+    expect(canDisableCategory(renamedCore)).toBe(false);
+    expect(canDeleteCategory(renamedCore)).toBe(false);
+    // 非核心内置「医疗」重命名为「餐饮」：不因名称撞名获得保护
+    const renamedOther = cat({ id: 'c2', name: '餐饮', core: false });
+    expect(isCoreBuiltin(renamedOther)).toBe(false);
+    expect(canDisableCategory(renamedOther)).toBe(true);
+    // 无标记的旧数据按名称兜底判定
+    expect(isCoreBuiltin(cat({ name: '餐饮' }))).toBe(true);
   });
 });
 

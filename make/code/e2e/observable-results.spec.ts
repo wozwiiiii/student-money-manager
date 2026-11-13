@@ -38,10 +38,12 @@ test('结果 1：登记 2 个账户 + 2 次快照后，资产总览展示资产�
   let modal = page.locator('.ant-modal-content');
   await modal.getByPlaceholder('余额').first().fill('100');
   await modal.getByPlaceholder('余额').nth(1).fill('500');
-  await modal.locator('.ant-picker input').first().fill(
-    `${new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)} 12:00:00`,
-  );
-  await modal.locator('.ant-picker input').first().press('Enter');
+  // 带时间的 DatePicker：fill/键入文本均不会提交值（时间会保持"现在"→ 与第二条同分钟冲突），
+  // 必须在面板中点选日期单元格（title=YYYY-MM-DD）后点「确定」提交
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  await modal.locator('.ant-picker input').first().click();
+  await page.locator(`.ant-picker-cell[title="${yesterday}"]`).click();
+  await page.locator('.ant-picker-ok button').click();
   await modal.getByRole('button', { name: '保存快照' }).click();
 
   // 第二次快照：默认当前时间，余额小幅变化（避免 ±50% 确认）
@@ -51,8 +53,8 @@ test('结果 1：登记 2 个账户 + 2 次快照后，资产总览展示资产�
   await modal.getByPlaceholder('余额').nth(1).fill('520');
   await modal.getByRole('button', { name: '保存快照' }).click();
 
-  // 趋势图（ECharts canvas）出现
-  await expect(page.getByText('资产趋势')).toBeVisible();
+  // 趋势图（ECharts canvas）出现；标题用精确匹配，避免与空态文案互相干扰
+  await expect(page.getByText('资产趋势', { exact: true })).toBeVisible();
   await expect(page.locator('canvas').first()).toBeVisible();
 });
 

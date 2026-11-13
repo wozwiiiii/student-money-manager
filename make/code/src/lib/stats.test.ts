@@ -133,6 +133,15 @@ describe('buildWarnings（03 §5.4 文案模板）', () => {
   it('正常项不出现在提示中', () => {
     expect(buildWarnings('本月', budgetProgress(100, 10000, 80), [])).toHaveLength(0);
   });
+
+  it('梯度优先于范围：分类已超支排在总预算接近超支之前（03 §5.4 排序）', () => {
+    const warnings = buildWarnings(
+      '本月',
+      budgetProgress(9000, 10000, 80), // 总预算：接近超支
+      [{ categoryId: 'c1', name: '餐饮', view: budgetProgress(12000, 10000, 80) }], // 分类：已超支
+    );
+    expect(warnings.map((w) => w.key)).toEqual(['cat:c1', 'total']);
+  });
 });
 
 describe('提示条关闭后的重现规则（05 §5.1）', () => {

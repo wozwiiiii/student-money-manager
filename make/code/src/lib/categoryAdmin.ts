@@ -16,10 +16,9 @@ export const CORE_BUILTIN_NAMES: Record<'expense' | 'income', string[]> = {
   income: ['生活费', '兼职', '红包'],
 };
 
-/** 是否核心内置分类（按内置标记 + 名称判定；重命名后仍按身份判定见下） */
+/** 是否核心内置分类（05 §3.2 身份不变：以创建时固化的核心标记为准，旧数据按名称兜底） */
 export function isCoreBuiltin(category: Category): boolean {
-  // 分类身份不变（05 §3.2），核心范围按 id 固化于创建时；此处按名称兜底判定，
-  // 因内置种子在首次初始化后不再变化，重命名后的核心分类由 canDisable/canDelete 的 builtin 分支统一保护。
+  if (category.core !== undefined) return category.core;
   return category.builtin && CORE_BUILTIN_NAMES[category.direction].includes(category.name);
 }
 
@@ -30,7 +29,7 @@ export function canDeleteCategory(category: Category): boolean {
 
 /** 是否可停用（05 §3.4）：核心内置分类不可停用，其余（含自定义）可停用 */
 export function canDisableCategory(category: Category): boolean {
-  return !(category.builtin && CORE_BUILTIN_NAMES[category.direction].includes(category.name));
+  return !isCoreBuiltin(category);
 }
 
 /**

@@ -1,4 +1,5 @@
 import type { AppMeta, AppSettings, Category, MappingRule } from './types';
+import { CORE_BUILTIN_NAMES } from './categoryAdmin';
 
 /**
  * 内置默认数据。
@@ -84,6 +85,8 @@ export function buildBuiltinCategories(
         parentId: null,
         level: 1,
         builtin: true,
+        // 核心内置身份固化于创建时（05 §3.2/§3.4），重命名后仍按此标记保护
+        core: CORE_BUILTIN_NAMES[direction].includes(seed.name),
         defaultName: seed.name,
         disabled: false,
         sortOrder: sortOrder++,
@@ -96,6 +99,7 @@ export function buildBuiltinCategories(
           parentId,
           level: 2,
           builtin: true,
+          core: false,
           defaultName: childName,
           disabled: false,
           sortOrder: sortOrder++,
