@@ -9,6 +9,12 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // 同源相对路径 /api 转发后端（阶段 8）：dev 代理本地 FastAPI；生产为同域反代 [TBD-19]
+    proxy: {
+      '/api': 'http://localhost:8000',
+    },
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

@@ -10,6 +10,8 @@ import {
   type BackupFile,
 } from '@/db/backup';
 import { downloadBackupFile } from '@/lib/backupDownload';
+import { scheduleSync } from '@/lib/syncScheduler';
+import { useSyncStore } from '@/stores/useSyncStore';
 import {
   CLEAR_SCOPE_TEXT,
   EXPORT_DONE_NOTICE,
@@ -74,6 +76,8 @@ export default function DataManagementPanel() {
     }
     setPendingFile(null);
     await reloadAllStores();
+    // 备份导入视作一次本地整体写入，登录状态下推送至云端（08 §9.2）
+    scheduleSync();
     message.success(
       `恢复完成：账户 ${result.counts.accounts} 个、收支记录 ${result.counts.transactions} 条、资产快照 ${result.counts.snapshots} 条、储蓄目标 ${result.counts.goals} 个`,
     );
@@ -86,6 +90,7 @@ export default function DataManagementPanel() {
       content: (
         <div>
           <p>{CLEAR_SCOPE_TEXT}。</p>
+          {useSyncStore.getState().token && <p>登录模式下：云端数据副本将一并删除（账号保留）。</p>}
           <p>
             <Button size="small" onClick={() => void handleExport()}>
               先导出备份再清空
@@ -105,6 +110,14 @@ export default function DataManagementPanel() {
           okButtonProps: { danger: true },
           cancelText: '取消',
           onOk: async () => {
+            // 登录模式下云端数据副本一并删除（08 §2.5）；账号保留
+            if (useSyncStore.getState().token) {
+              try {
+                await useSyncStore.getState().wipeCloud();
+              } catch {
+                message.warning('云端副本删除未完成，将在下次同步时重试');
+              }
+            }
             await clearAllData();
             await reloadAllStores();
             message.success('已清空全部数据，应用已回到首次使用状态');

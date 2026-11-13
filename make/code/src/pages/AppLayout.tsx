@@ -12,6 +12,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import BackupReminderBanner from '@/components/BackupReminderBanner';
 import FirstUseNotice from '@/components/FirstUseNotice';
 import { useAppStore } from '@/stores/useAppStore';
+import { useSyncStore } from '@/stores/useSyncStore';
 
 const { Sider, Header, Content } = Layout;
 
@@ -32,6 +33,8 @@ export default function AppLayout() {
   useEffect(() => {
     // 全局横切状态（首次告知 08 §7、备份提醒 08 §3.3）依赖应用状态，布局层统一加载
     void loadApp();
+    // 已登录则恢复登录态并做一次云同步（08 §9.2 应用打开时自动拉取）
+    void useSyncStore.getState().restore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (

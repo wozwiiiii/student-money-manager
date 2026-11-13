@@ -108,6 +108,8 @@ export interface Category {
   defaultName?: string;
   disabled: boolean;
   sortOrder: number;
+  /** 最近修改时间（阶段 8 云同步 LWW 依据，08 §9.2）；由 repositories 保存时补写 */
+  updatedAt?: string;
 }
 
 /** CSV 导入分类映射规则（01 §5.4、02 §4.4.5）：描述包含关键词即归类 */
@@ -118,6 +120,8 @@ export interface MappingRule {
   categoryId: string;
   builtin: boolean;
   enabled: boolean;
+  /** 最近修改时间（阶段 8 云同步 LWW 依据）；由 repositories 保存时补写 */
+  updatedAt?: string;
 }
 
 /** 分类预算金额（分） */
@@ -204,6 +208,8 @@ export interface RiskProfile {
   manuallyAdjusted: boolean;
   /** 最近一次手动调整时间（04 §3.5）；重测提交后随手动调整标记一并清除 */
   manuallyAdjustedAt?: string | null;
+  /** 最近修改时间（阶段 8 云同步 LWW 依据）；由 repositories 保存时补写 */
+  updatedAt?: string;
 }
 
 /** 用户偏好设置（08 §2.2 S8）。默认值见 src/lib/defaults.ts。 */
@@ -227,6 +233,8 @@ export interface AppSettings {
    * A = 本周期内梯度升级时重现；B = 次日重新评估（默认，与 03 §5.6 一致）；C = 本周期内不再重现。
    */
   bannerReappearRule: BannerReappearRule;
+  /** 最近修改时间（阶段 8 云同步 LWW 依据）；由 repositories 保存时补写 */
+  updatedAt?: string;
 }
 
 /** 提示条关闭后的重现规则选项（05 §5.1） */
@@ -247,4 +255,6 @@ export interface AppMeta {
   lastBackupExportAt: string | null;
   /** 最近一次点击"关闭本次提醒"的时间（08 §3.3）：下个提醒周期到达后再次提醒 */
   backupReminderDismissedAt?: string | null;
+  /** 最近修改时间（阶段 8 云同步 LWW 依据）；由 repositories 保存时补写 */
+  updatedAt?: string;
 }

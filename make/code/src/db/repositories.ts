@@ -19,14 +19,24 @@ import type {
  * 后续扩展"本地 + 远端"双通道时在此层接入。
  */
 
+import { scheduleSync } from '@/lib/syncScheduler';
+
 type Entity = { id: string };
+
+/** 写操作成功后调度云同步（阶段 8，08 §9.2"本地数据变更后后台自动推送"；去抖见 syncScheduler） */
+function tracked<T>(p: Promise<T>): Promise<T> {
+  return p.then((r) => {
+    scheduleSync();
+    return r;
+  });
+}
 
 function repo<T extends Entity>(table: () => { toArray(): Promise<T[]>; get(id: string): Promise<T | undefined>; put(value: T): Promise<string>; delete(id: string): Promise<void> }) {
   return {
     all: (): Promise<T[]> => table().toArray(),
     get: (id: string): Promise<T | undefined> => table().get(id),
-    save: (value: T): Promise<string> => table().put(value),
-    remove: (id: string): Promise<void> => table().delete(id),
+    save: (value: T): Promise<string> => tracked(table().put(value)),
+    remove: (id: string): Promise<void> => tracked(table().delete(id)),
   };
 }
 
@@ -37,7 +47,7 @@ export const accountsRepo = {
   async add(input: Omit<Account, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>): Promise<Account> {
     const now = new Date().toISOString();
     const account: Account = { ...input, id: crypto.randomUUID(), deletedAt: null, createdAt: now, updatedAt: now };
-    await db.accounts.add(account);
+    await tracked(db.accounts.add(account));
     return account;
   },
 };
@@ -64,6 +74,8 @@ export const transactionsRepo = {
 
 export const categoriesRepo = {
   ...repo<Category>(() => db.categories),
+  /** 保存时补写 updatedAt（阶段 8 云同步 LWW 依据，08 §9.2） */
+  save: (value: Category): Promise<string> => tracked(db.categories.put({ ...value, updatedAt: new Date().toISOString() })),
   /** 按展示顺序（sortOrder）返回 */
   byDirection: async (direction: 'income' | 'expense'): Promise<Category[]> =>
     (await db.categories.where('direction').equals(direction).toArray()).sort(
@@ -73,6 +85,8 @@ export const categoriesRepo = {
 
 export const mappingRulesRepo = {
   ...repo<MappingRule>(() => db.mappingRules),
+  /** 保存时补写 updatedAt（阶段 8 云同步 LWW 依据） */
+  save: (value: MappingRule): Promise<string> => tracked(db.mappingRules.put({ ...value, updatedAt: new Date().toISOString() })),
   enabled: (): Promise<MappingRule[]> => db.mappingRules.filter((r) => r.enabled).toArray(),
 };
 
@@ -94,7 +108,8 @@ export const goalEntriesRepo = {
 
 export const riskProfileRepo = {
   get: (): Promise<RiskProfile | undefined> => db.riskProfile.get('current'),
-  save: (value: RiskProfile): Promise<string> => db.riskProfile.put(value),
+  /** 保存时补写 updatedAt（阶段 8 云同步 LWW 依据，08 §9.2） */
+  save: (value: RiskProfile): Promise<string> => tracked(db.riskProfile.put({ ...value, updatedAt: new Date().toISOString() })),
 };
 
 export const settingsRepo = {
@@ -107,7 +122,8 @@ export const settingsRepo = {
       backupReminderDays: 30,
       bannerReappearRule: 'B',
     },
-  save: (value: AppSettings): Promise<string> => db.settings.put(value),
+  /** 保存时补写 updatedAt（阶段 8 云同步 LWW 依据） */
+  save: (value: AppSettings): Promise<string> => tracked(db.settings.put({ ...value, updatedAt: new Date().toISOString() })),
 };
 
 export const appMetaRepo = {
@@ -120,5 +136,6 @@ export const appMetaRepo = {
       bankDisclaimerAckAt: null,
       lastBackupExportAt: null,
     },
-  save: (value: AppMeta): Promise<string> => db.appMeta.put(value),
+  /** 保存时补写 updatedAt（阶段 8 云同步 LWW 依据） */
+  save: (value: AppMeta): Promise<string> => tracked(db.appMeta.put({ ...value, updatedAt: new Date().toISOString() })),
 };

@@ -3,6 +3,7 @@ import { Button, Card, InputNumber, Radio, Segmented, Space, Switch, Tag, Typogr
 import { useNavigate } from 'react-router-dom';
 import CategoryAdminPanel from '@/components/CategoryAdminPanel';
 import DataManagementPanel from '@/components/DataManagementPanel';
+import AccountSyncPanel from '@/components/AccountSyncPanel';
 import { useAppStore } from '@/stores/useAppStore';
 import { DEFAULT_SETTINGS } from '@/lib/defaults';
 import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER } from '@/lib/riskQuiz';
@@ -206,6 +207,13 @@ export default function SettingsPage() {
             账户删除保留历史数据、不影响趋势图历史记录点（05 §4.2）；目标参数保存后进度与剩余天数即时重算（05 §6.2）。
           </Typography.Text>
         </Space>
+      </Card>
+
+      <Card
+        title="账号与云同步"
+        extra={<Typography.Text type="secondary">08 §9：可选登录、云端同步、多端使用</Typography.Text>}
+      >
+        <AccountSyncPanel />
       </Card>
 
       <Card
